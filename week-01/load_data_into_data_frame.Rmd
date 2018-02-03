@@ -3,8 +3,8 @@ title: "DATA 607 - Week 1 Assignment"
 author: "Binish Kurian Chandy"
 date: "February 2, 2018"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
