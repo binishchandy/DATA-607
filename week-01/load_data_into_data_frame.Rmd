@@ -1,0 +1,77 @@
+---
+title: "DATA 607 - Week 1 Assignment"
+author: "Binish Kurian Chandy"
+date: "February 2, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Read mushroom data set
+```{r message = FALSE, warning = FALSE}
+df <- read.csv("https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data", header = FALSE)
+str(df)
+dim(df)
+```
+
+### Rename column names
+```{r message = FALSE, warning = FALSE}
+colnames(df) <- c("class", "cap-shape", "cap-surface", "cap-color", "bruises?", "odor", 
+  "gill-attachment", "gill-spacing", "gill-size", "gill-color", "stalk-shape",
+  "stalk-root", "stalk-surface-above-ring", "stalk-surface-below-ring", 
+  "stalk-color-above-ring", "stalk-color-below-ring", "veil-type", "veil-color",
+  "ring-number", "ring-type", "spore-print-color", "population", "habitat")
+head(df)
+```
+
+### Create new dataframe using subset of columns
+```{r message = FALSE, warning = FALSE}
+mushrooms <- subset(df, select=c("class", "odor", "gill-size", "population", "habitat"))
+```
+
+### Check if new data frame has same number of observation as original
+```{r}
+dim(df)
+dim(mushrooms)
+```
+
+### Replace abbreviations with actual values
+```{r message = FALSE, warning = FALSE}
+levels(mushrooms$class)[levels(mushrooms$class) == "e"] <- "edible"
+levels(mushrooms$class)[levels(mushrooms$class) == "p"] <- "poisonous"
+
+levels(mushrooms$odor)[levels(mushrooms$odor) == "a"] <- "almond"
+levels(mushrooms$odor)[levels(mushrooms$odor) == "l"] <- "anise"
+levels(mushrooms$odor)[levels(mushrooms$odor) == "c"] <- "creosote"
+levels(mushrooms$odor)[levels(mushrooms$odor) == "y"] <- "fishy"
+levels(mushrooms$odor)[levels(mushrooms$odor) == "f"] <- "foul"
+levels(mushrooms$odor)[levels(mushrooms$odor) == "m"] <- "musty"
+levels(mushrooms$odor)[levels(mushrooms$odor) == "n"] <- "none"
+levels(mushrooms$odor)[levels(mushrooms$odor) == "p"] <- "pungent"
+levels(mushrooms$odor)[levels(mushrooms$odor) == "s"] <- "spicy"
+
+levels(mushrooms$'gill-size')[levels(mushrooms$'gill-size') == "b"] <- "broad"
+levels(mushrooms$'gill-size')[levels(mushrooms$'gill-size') == "n"] <- "narrow"
+
+levels(mushrooms$population)[levels(mushrooms$population) == "a"] <- "abundant"
+levels(mushrooms$population)[levels(mushrooms$population) == "c"] <- "clustered"
+levels(mushrooms$population)[levels(mushrooms$population) == "n"] <- "numerous"
+levels(mushrooms$population)[levels(mushrooms$population) == "s"] <- "scattered"
+levels(mushrooms$population)[levels(mushrooms$population) == "v"] <- "several"
+levels(mushrooms$population)[levels(mushrooms$population) == "y"] <- "solitary"
+
+levels(mushrooms$habitat)[levels(mushrooms$habitat) == "g"] <- "grasses"
+levels(mushrooms$habitat)[levels(mushrooms$habitat) == "l"] <- "leaves"
+levels(mushrooms$habitat)[levels(mushrooms$habitat) == "m"] <- "meadows"
+levels(mushrooms$habitat)[levels(mushrooms$habitat) == "p"] <- "paths"
+levels(mushrooms$habitat)[levels(mushrooms$habitat) == "u"] <- "urban"
+levels(mushrooms$habitat)[levels(mushrooms$habitat) == "w"] <- "waste"
+levels(mushrooms$habitat)[levels(mushrooms$habitat) == "d"] <- "woods"
+
+head(mushrooms)
+tail(mushrooms)
+```
