@@ -11,13 +11,14 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### How to build the postgress database
+### How to build the postgress database?
 All files used to build database can be found at :
+[link](https://github.com/binishkurian/DATA-607/tree/master/week-02)
 
-Use backup file or execute the sql commands from pgAdmin to load the databse.
+Use backup file or execute the sql commands from pgAdmin to load the database.
 
 **Load required drivers to connect to database server.**
-```{r}
+```{r message=FALSE}
 #install.packages("RPostgreSQL")
 library(RPostgreSQL)
 ```
@@ -30,10 +31,10 @@ con <- dbConnect(driver, host="localhost", port=5432, dbname="movies", user="pos
 
 **Fetch movie ratings from database.**    
 The movie ratings are fetched by join query across three tables namely movie, rating and reviewer.  
-  Movie table contains movie name, movie id and director name.  
-  Reviewer contains reviewer id and name.  
-  Rating contains movie id, reviewer id and stars.  
-```{r}
+  **Movie** table contains movie name, movie id and director name.  
+  **Reviewer** contains reviewer id and name.  
+  **Rating** contains movie id, reviewer id and stars.  
+```{r message=FALSE}
 query <- "select m.mid, m.title, m.director, re.name, ra.stars from movie m inner join rating ra on m.mid = ra.mid inner join reviewer re on
 ra.rid = re.rid"
 
@@ -44,7 +45,7 @@ dbDisconnect(con)
 dbUnloadDriver(driver)
 ```
 
-How many movies received 5 star rating?
+**How many movies received 5 star rating?**
 ```{r}
 unique(movies[which(movies$stars == 5), ]$title)
 ```
