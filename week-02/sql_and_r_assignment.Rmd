@@ -1,0 +1,50 @@
+---
+title: "Assignment – SQL and R"
+author: "Binish Kurian Chandy"
+date: "2/8/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### How to build the postgress database
+All files used to build database can be found at :
+
+Use backup file or execute the sql commands from pgAdmin to load the databse.
+
+**Load required drivers to connect to database server.**
+```{r}
+#install.packages("RPostgreSQL")
+library(RPostgreSQL)
+```
+
+**Open connection to database**
+```{r}
+driver <- dbDriver("PostgreSQL")
+con <- dbConnect(driver, host="localhost", port=5432, dbname="movies", user="postgres")
+```
+
+**Fetch movie ratings from database.**    
+The movie ratings are fetched by join query across three tables namely movie, rating and reviewer.  
+  Movie table contains movie name, movie id and director name.  
+  Reviewer contains reviewer id and name.  
+  Rating contains movie id, reviewer id and stars.  
+```{r}
+query <- "select m.mid, m.title, m.director, re.name, ra.stars from movie m inner join rating ra on m.mid = ra.mid inner join reviewer re on
+ra.rid = re.rid"
+
+rs <- dbSendQuery(con, query)
+movies <- dbFetch(rs, n=-1)
+head(movies)
+dbDisconnect(con) 
+dbUnloadDriver(driver)
+```
+
+How many movies received 5 star rating?
+```{r}
+unique(movies[which(movies$stars == 5), ]$title)
+```
