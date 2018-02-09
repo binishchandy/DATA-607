@@ -6,13 +6,12 @@ drop table if exists Movie;
 drop table if exists Reviewer;
 drop table if exists Rating;
 
-/* Create the schema for our tables */
+/* Create the tables */
 create table Movie(mID int, title text, director text);
 create table Reviewer(rID int, name text);
 create table Rating(rID int, mID int, stars int);
 
 /* Populate the tables with our data */
-
 insert into Movie values(101, 'GET OUT', 'Jordan Peele');
 insert into Movie values(102, 'THE BIG SICK', 'Michael Showalter');
 insert into Movie values(103, 'DUNKIRK', 'Christopher Nolan');
