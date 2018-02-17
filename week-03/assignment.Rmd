@@ -1,0 +1,85 @@
+---
+title: "Week 03 - Assignment"
+author: "Binish Kurian Chandy"
+date: "February 16, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### 3.a
+```{r warning=FALSE}
+require(stringr)
+raw.data <- "555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5543642Dr. Julius Hibbert"
+name <- unlist(str_extract_all(raw.data, "[[:alpha:]., ]{2,}"))
+
+title_split <- str_trim(unlist(sapply(name, function(x) str_split(x, "Rev.|Dr."))))
+name_without_title <- unlist(sapply(title_split, function(x) if(x != '') x))
+fn_reverse_name <- function(x) {
+  temp <- unlist(str_split(x, ","))
+  if (length(temp == 2)) {
+    str_c(str_trim(temp[2]), str_trim(temp[1]), sep = " ")
+  }
+}
+name_reversed <- unlist(sapply(name_without_title, fn_reverse_name))
+combined_result <- c(name_without_title[!str_detect(name_without_title, ",")], name_reversed[!is.na(name_reversed)])
+result <- str_replace(combined_result, pattern = "C. ", replacement = "")
+print(result)
+```
+
+#### 3.b
+```{r}
+str_detect(name, "^Rev.|^Dr.")
+```
+
+#### 3.c
+Only Burns, C. Montgomery has second name.
+```{r}
+name_without_title <- str_replace(name,pattern="Rev.|Dr.", replacement="")
+name_count <- str_count(name_without_title,"\\w+")
+str_detect(name_count, "3")
+```
+
+#### 4.a
+Matches string with numbers from 0 to 9 atleast once and ends in $.
+```{r}
+unlist(str_extract_all(c("1234$", "543"), "[0-9]+\\$"))
+```
+
+#### 4.b
+`\\b` matches the pattern at the beginning or end of each word. So it will match all strings with
+characters from a to z with min length of 1 and max length of 4.
+```{r}
+unlist(str_extract_all(c("asdf", "aa", "a", "abcde"), "\\b[a-z]{1,4}\\b"))
+```
+
+#### 4.c
+`.*` matches zero or more any characters. `?` makes it optional. And the string should end in `.txt`
+```{r}
+unlist(str_extract_all(c("asdf.txt", ".txt", "~.txt", "tt.txts"), ".*?\\.txt$"))
+```
+
+#### 4.d
+Matches string of date like format.
+```{r}
+unlist(str_extract_all(c("11/11/1234", "11/11/123"), "\\d{2}/\\d{2}/\\d{4}"))
+```
+
+#### 4.d
+Matches html tags which are wellformed and not empty.
+```{r}
+unlist(str_extract_all(c("<head>abc</head>", "<body></body>"), "<(.+?)>.+?</\\1>"))
+```
+
+#### 9
+```{r}
+secret_message <- "clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hqrfpRxs5Aj5dwpn0Tanwo
+Uwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigO
+d6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPa1otfb7wEm24k6t3sR9zqe5
+fy89n6Nd5t9kc4fE905gmc4Rgxo5nhDk!gr"
+paste(unlist(str_extract_all(secret_message,"[[:upper:]]")), sep = "", collapse = "")
+```
