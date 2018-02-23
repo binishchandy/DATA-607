@@ -34,3 +34,5 @@ vignettes/*.pdf
 
 rsconnect/
 *.html
+
+.DS_Store
