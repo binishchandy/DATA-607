@@ -136,3 +136,4 @@ head(new_df)
 write.csv(new_df, "players.csv", row.names = FALSE)
 ```
 The csv file created from this project is also hosted in github.  
+[Players.csv](https://raw.githubusercontent.com/binishkurian/DATA-607/master/project-01/players.csv)
