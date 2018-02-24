@@ -1,0 +1,138 @@
+---
+title: "Project 1"
+author: "Binish Kurian Chandy"
+date: "February 24, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Loading and parsing data
+The data file is hosted in github.  
+[Tournament Info](https://raw.githubusercontent.com/binishkurian/DATA-607/master/project-01/tournamentinfo.txt)
+
+```{r}
+require(stringr)
+
+#Function to parse file from github url
+processFile = function(filepath) {
+  con = url(filepath, "r")
+  
+  players_list <- data.frame()
+  is_player_row_found <- FALSE
+  player <- vector('character')
+  options(stringsAsFactors = FALSE)
+  
+  while (TRUE) {
+    line = readLines(con, n = 1)
+    if (length(line) == 0) {
+      break
+    }
+    
+    if (str_detect(line, "^[[:space:]]*[[:digit:]]{1,2}")) {
+      line_split <- unlist(str_split(line, "\\|"))
+      line_split_trimmed <-
+        unlist(str_trim(line_split))
+      pair_number_extract <-
+        str_extract(line_split_trimmed, "^[[:digit:]]{1,2}$")
+      pair_number <-
+        pair_number_extract[!is.na(pair_number_extract)]
+      player_name_extract <-
+        str_extract(
+          line_split_trimmed,
+          "^[[:upper:]]+[[:space:]]+[[:upper:]]*[[:space:]]*[[:upper:]]*[[:space:]]*[[:upper:]]+$|^[[:upper:]]+[[:space:]]+[[:upper:]]*[[:space:]]*[[:upper:]]*-[[:upper:]]+$"
+        )
+      player_name <-
+        player_name_extract[!is.na(player_name_extract)]
+      total_points_extract <-
+        str_extract(line_split_trimmed, "^[[:digit:]].[[:digit:]]$")
+      total_points <-
+        total_points_extract[!is.na(total_points_extract)]
+      result_with_player_extract <-
+        str_extract(line_split_trimmed,
+                    "^[[:upper:]][[:space:]]+[[:digit:]]+$")
+      result_with_player <-
+        result_with_player_extract[!is.na(result_with_player_extract)]
+      opponents <-
+        str_extract(result_with_player, "[[:digit:]]+")
+      opponents_as_csv <-
+        str_c(opponents, collapse = ",")
+      player <-
+        c(pair_number,
+          player_name,
+          total_points,
+          opponents_as_csv)
+    }
+    else if (str_detect(line, "->[[:space:]]*[[:digit:]]+")) {
+      line_split <- unlist(str_split(line, "\\|"))
+      line_split_trimmed <-
+        unlist(str_trim(line_split))
+      player_state_extract <-
+        str_extract(line_split_trimmed, "[[:upper:]]{2}")
+      player_state <-
+        player_state_extract[!is.na(player_state_extract)]
+      pre_rating_extract <-
+        str_extract(line_split_trimmed, "R:[[:space:]]+[[:digit:]]+")
+      pre_rating_str <-
+        pre_rating_extract[!is.na(pre_rating_extract)]
+      pre_rating <-
+        str_extract(pre_rating_str, "[[:digit:]]+")
+      players_list <-
+        rbind(players_list, c(player, player_state, pre_rating, 0))
+    }
+    
+  }
+  
+  close(con)
+  colnames(players_list) <-
+    c(
+      "pair_num",
+      "name",
+      "total_pts",
+      "opponents_as_csv",
+      "state",
+      "pre_rating",
+      "avg_opponents_rating"
+    )
+  return(players_list)
+}
+df <-
+  processFile(
+    "https://raw.githubusercontent.com/binishkurian/DATA-607/master/project-01/tournamentinfo.txt"
+  )
+df$pre_rating <- as.numeric(as.character(df$pre_rating))
+head(df)
+```
+
+### Calculate average pre chess rating of opponents
+```{r}
+for (i in 1:nrow(df)) {
+  opponents <- unlist(str_split(df[i,]$opponents_as_csv, ","))
+  sum = 0
+  for (j in 1:length(opponents)) {
+    pre_rating <- df[opponents[j],]$pre_rating
+    sum = sum + pre_rating
+  }
+  df[i, "avg_opponents_rating"] <- (floor(sum / length(opponents)))
+}
+
+new_df <- data.frame(
+  "name" = df$name,
+  "state" = df$state,
+  "total_pts" = df$total_pts,
+  "pre_rating" = df$pre_rating,
+  "avg_opponents_rating" = df$avg_opponents_rating
+)
+new_df$avg_opponents_rating <-
+  as.numeric(as.character(new_df$avg_opponents_rating))
+
+head(new_df)
+```
+
+### CSV file
+```{r}
+write.csv(new_df, "players.csv", row.names = FALSE)
+```
+The csv file created from this project is also hosted in github.  
