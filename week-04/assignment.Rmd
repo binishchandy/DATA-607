@@ -1,0 +1,78 @@
+---
+title: "Assignment – Tidying and Transforming Data"
+author: "Binish Kurian Chandy"
+date: "3/4/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RCurl)
+library(tidyverse)
+```
+
+### Read data from github
+The data file is hosted in github.  
+[Airline](https://raw.githubusercontent.com/binishkurian/DATA-607/master/week-04/flights.csv)
+```{r}
+url <- getURL("https://raw.githubusercontent.com/binishkurian/DATA-607/master/week-04/flights.csv")
+df <- read.csv(text = url, header = TRUE, check.names = FALSE)
+```
+
+### Convert data frame to tibble
+```{r}
+flight_schedule <- as.tibble(df) 
+flight_schedule
+```
+
+### Tidy data
+```{r}
+flight_schedule_tidy <-flight_schedule %>%
+        gather('Los Angeles':Seattle, key = "destination", value = "flight_count") %>%
+        spread(key = arrival, value = flight_count) %>%
+        rename(on_time = `on time`)
+flight_schedule_tidy
+```
+
+### Rank delays from least to maximum delayed across carriers and destination
+```{r}
+flight_schedule_tidy %>%
+        mutate(
+                perc_delayed = delayed / (delayed + on_time),
+                delay_score = min_rank(perc_delayed)
+        ) %>%
+        arrange(delay_score)
+```
+```
+AM WEST's service to San Francisco has most delayed flights.
+```
+
+### Box plots of delays to check outliers
+```{r}
+boxplot(flight_schedule_tidy[flight_schedule_tidy$carrier == "ALASKA", ]$delayed)      
+boxplot(flight_schedule_tidy[flight_schedule_tidy$carrier == "AM WEST", ]$delayed) 
+```
+
+### Compare delays between airlines
+```{r}
+flight_schedule_tidy %>%
+        group_by(carrier) %>%
+        summarise(
+                count = n(),
+                mean = mean(delayed, na.rm = TRUE), 
+                sd = sd(delayed, na.rm = TRUE),
+                median = median(delayed, na.rm = TRUE),
+                iqr = IQR(delayed, na.rm = TRUE),
+                abs_dev = mad(delayed, na.rm = TRUE),
+                min = min(delayed, na.rm = TRUE),
+                max = max(delayed, na.rm = TRUE)
+                )
+```
+
+### Conclusion
+```
+Since both airline data have a outlier, median and IQR are more robust than
+mean and sd. Following the table above, ALASKA has median of 62 flights and 
+IQR of 82 and AM WEST has median of 117 flights and IQR of 64. This makes me to 
+conclude that ALASKA has better control on their flight delays.
+```
