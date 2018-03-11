@@ -1,0 +1,174 @@
+---
+title: "Project - 02"
+author: "Binish Kurian Chandy"
+date: "3/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RCurl)
+library(tidyverse)
+```
+
+## Dataset 1 - Total health spending per person (US$)  
+[Dataset 1 Location](https://www.gapminder.org/data/)  
+The csv file is hosted in github for processing.    
+[Dataset 1 CSV](https://raw.githubusercontent.com/binishkurian/DATA-607/master/project-02/health_spending_per_person.csv)
+
+### Create data frame from CSV
+```{r}
+library(RCurl)
+url <- getURL("https://raw.githubusercontent.com/binishkurian/DATA-607/master/project-02/health_spending_per_person.csv")
+df <- read.csv(text = url, header = TRUE, check.names = FALSE)
+```
+
+### Tidy data
+```{r}
+(health_spending <- as.tibble(df) %>%
+        gather(`1995`:`2010`, key = "year", value = "USD", na.rm = TRUE))
+```
+
+### Find the maximum spending per person for each country
+```{r}
+(max_spending_for_each_country <-health_spending %>%
+        group_by(country) %>%
+        summarise(max_spending = max(USD, na.rm = TRUE))) 
+```
+
+### Find the countries with maximum spending per person
+```{r}
+max_spending_for_each_country %>%
+        mutate(r = min_rank(desc(max_spending))) %>% 
+        arrange(r)
+```
+
+```
+United States has most spending followed by Luxembourg, Norway, Switzerland and Monaco
+```
+
+### Let's explore the spending per person for only above countries
+```{r}
+health_spending %>%
+        filter(country %in% c("United States", "Luxembourg", "Norway", "Switzerland", "Monaco")) %>%
+        ggplot(mapping = aes(x = country, y = USD)) +
+        geom_boxplot()
+```
+
+### Let's check the general trend in spending for above countries
+```{r}
+health_spending %>%
+        filter(country %in% c("United States", "Luxembourg", "Norway", "Switzerland", "Monaco")) %>%
+        ggplot(mapping = aes(x = year, y = USD)) +
+        geom_line(aes(group = country), colour = "grey50") + 
+        geom_point(aes(colour = country))
+```
+```
+The general trend for United States is to have increased spending year by year.
+```
+
+## Dataset 2 - Betsy Rosalen's Movie Ratings Dataset
+[Dataset 2 Location](https://docs.google.com/spreadsheets/d/1K_a87dxLQR91GwVcqkqZK9kjxcYDl1tbK9EX9WvC7bo/edit#gid=601448852)  
+The csv file is hosted in github for processing.    
+[Dataset 2 CSV](https://raw.githubusercontent.com/binishkurian/DATA-607/master/project-02/movie_rating.csv)
+
+### Create data frame from CSV
+```{r}
+library(RCurl)
+url <- getURL("https://raw.githubusercontent.com/binishkurian/DATA-607/master/project-02/movie_rating.csv")
+df <- read.csv(text = url, header = TRUE, check.names = FALSE)
+```
+
+### Tidy data
+```{r}
+(tidy_rating <- as.tibble(df) %>%
+        select(-Timestamp) %>%
+        gather(`Guardians of the Galaxy 2`:`Valerian and the City of a Thousand Planets`, key = movie, value = rating))
+```
+
+### Find the movie with max average rating
+```{r}
+tidy_rating %>%
+        group_by(movie) %>%
+        summarise(av_rating = mean(rating, na.rm = TRUE)) %>%
+        mutate(r = min_rank(desc(av_rating))) %>%
+        arrange(r)
+```
+```
+Wonder Woman has the max average rating of 3.12 followed by Star Wars: 
+The Last Jedi with average rating of 2.92
+```
+
+### Let's do summary computation for movies
+```{r}
+tidy_rating %>%
+        ggplot() +
+        stat_summary(mapping = aes(x = movie, y = rating),
+                     fun.ymin = min,
+                     fun.ymax = max,
+                     fun.y = mean) +
+        coord_flip()
+```
+
+### Let's find the maximum rating provided by each evaluator
+```{r}
+tidy_rating %>%
+        group_by(Name) %>%
+        summarize(max_rating = max(rating, na.rm = TRUE)) %>%
+        arrange(desc(max_rating))
+```
+
+### Do summary computation for movie evaluators
+```{r}
+tidy_rating %>%
+        ggplot() +
+        stat_summary(mapping = aes(x = Name, y = rating),
+                     fun.ymin = min,
+                     fun.ymax = max,
+                     fun.y = mean) +
+        coord_flip()
+```
+
+## Dataset 3 - Aged 55+ unemployment rate (%)  
+[Dataset 3 Location](https://www.gapminder.org/data/)  
+The csv file is hosted in github for processing.    
+[Dataset 3 CSV](https://raw.githubusercontent.com/binishkurian/DATA-607/master/project-02/health_spending_per_person.csv)
+
+### Create data frame from CSV
+```{r}
+library(RCurl)
+url <- getURL("https://raw.githubusercontent.com/binishkurian/DATA-607/master/project-02/unemployment_above_55.csv")
+df <- read.csv(text = url, header = TRUE, check.names = FALSE)
+```
+
+### Tidy data
+```{r}
+tidy_unemploy <- as.tibble(df) %>%
+        gather(`1981`:`2005`, key = year, value = prec, na.rm = TRUE)
+```
+
+### Find maximum unemployment percentage for each country
+```{r}
+tidy_unemploy %>%
+        group_by(country) %>%
+        summarise(max_perc = max(prec, na.rm = TRUE))
+```
+
+### Find the country with max unemployment percentage
+```{r}
+tidy_unemploy %>%
+        group_by(country) %>%
+        summarise(max_perc = max(prec, na.rm = TRUE)) %>%
+        arrange(desc(max_perc))
+```
+```
+Latvia has the maximum unemployment percentage followed by Finland.
+```
+
+### Scatter plot for unemployment percentage
+```{r}
+tidy_unemploy %>%
+        ggplot(aes(x = year, y = prec, group = country)) +
+        geom_jitter() +
+        coord_flip()
+```
