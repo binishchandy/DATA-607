@@ -1,0 +1,23 @@
+[
+   {
+      "title":"R for Data Science: Import, Tidy, Transform, Visualize, and Model Data",
+      "year":2017,
+      "price":18.17,
+      "isbn":1491910399,
+      "authors": ["Hadley Wickham", "Garrett Grolemund"]
+   },
+   {
+      "title":"An Introduction to Statistical Learning: with Applications in R",
+      "year":2013,
+      "price":50.74,
+      "isbn":1461471370,
+      "authors": ["Gareth James", "Daniel Witten", "Trevor Hastie", "Robert Tibshirani"]
+   },
+   {
+      "title":"Advanced R",
+      "year":2014,
+      "price":43.78,
+      "isbn":1466586966,
+      "authors": ["Hadley Wickham"]
+   }
+]
