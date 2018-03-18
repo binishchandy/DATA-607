@@ -1,0 +1,58 @@
+---
+title: "Assignment - Working with XML and JSON in R"
+author: "Binish Kurian Chandy"
+date: "3/18/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(XML)
+library(RCurl)
+library(jsonlite)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Parse XML file 
+```{r}
+xmlFileUrl <- "https://raw.githubusercontent.com/binishkurian/DATA-607/master/week-05/movie.xml"
+xData <- getURL(xmlFileUrl)
+(doc <- xmlParse(xData, useInternalNodes = TRUE))
+
+do.call(rbind, xpathApply(doc, "/books/book", function(node) {
+        title <- xmlValue(node[["title"]])
+        year <- xmlValue(node[["year"]])
+        price <- as.numeric(xmlValue(node[["price"]]))
+        isbn <- as.numeric(xmlValue(node[["isbn"]]))
+        
+        xp <- "./authors/author"
+        author <- xpathSApply(node, xp, xmlValue)
+        
+        data.frame(title, author, year, price, isbn, stringsAsFactors = FALSE)
+}))
+```
+
+### Parse HTML file 
+```{r}
+htmlFileUrl <- "https://raw.githubusercontent.com/binishkurian/DATA-607/master/week-05/movie.html"
+xData <- getURL(htmlFileUrl)
+
+(html_doc <- htmlParse(xData, useInternalNodes = TRUE))
+do.call(rbind, xpathApply(html_doc, "/html/body/div", function(node) {
+        title <- xmlValue(node[["h1"]])
+        year <- xmlValue(node[["b"]])
+        price <- as.numeric(xmlValue(node[["strong"]]))
+        isbn <- as.numeric(xmlValue(node[["i"]]))
+        
+        xp <- "./p/b"
+        author <- xpathSApply(node, xp, xmlValue)
+        
+        data.frame(title, year, price, isbn, author, stringsAsFactors = FALSE)
+}))
+```
+
+### Parse JSON file 
+```{r}
+jsonFileUrl <- "https://raw.githubusercontent.com/binishkurian/DATA-607/master/week-05/movie.json"
+xData <- getURL(jsonFileUrl)
+(doc <- fromJSON(xData))
+```
