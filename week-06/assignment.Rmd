@@ -1,0 +1,188 @@
+---
+title: "Assignment – Web APIs"
+author: "Binish Kurian Chandy"
+date: "3/30/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(RCurl)
+library(jsonlite)
+library(rjsonpath)
+library(stringr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### The New York Times Best Seller API - [best seller](http://developer.nytimes.com/books_api.json#/Console/GET/lists/best-sellers/history.json) 
+
+```
+The api provides different ways to search for best seller.
+The interface I coded up, allows users to search for best sellers for an author
+and it returns a flat data frame for best seller data upto several weeks
+```
+
+```
+The below example shows the nested json response from the best seller api.
+The interface flattens the nested structure of rank_history to data frame.
+```
+```
+{
+  "status": "OK",
+  "copyright": "Copyright (c) 2018 The New York Times Company.  All Rights Reserved.",
+  "num_results": 3,
+  "results": [
+    {
+      "title": "OUTLANDER",
+      "description": "An English nurse is transported back to 1743 during a second honeymoon in the Scottish Highlands.",
+      "contributor": "by Diana Gabaldon",
+      "author": "Diana Gabaldon",
+      "contributor_note": "",
+      "price": 0,
+      "age_group": "",
+      "publisher": "Dell",
+      "ranks_history": [
+        {
+          "primary_isbn10": "0440335167",
+          "primary_isbn13": "9780440335160",
+          "rank": 14,
+          "list_name": "Combined Print and E-Book Fiction",
+          "display_name": "Combined Print & E-Book Fiction",
+          "published_date": "2017-09-24",
+          "bestsellers_date": "2017-09-09",
+          "weeks_on_list": 21,
+          "ranks_last_week": null,
+          "asterisk": 0,
+          "dagger": 0
+        },
+        {
+          "primary_isbn10": "0440335167",
+          "primary_isbn13": "9780440335160",
+          "rank": 2,
+          "list_name": "E-Book Fiction",
+          "display_name": "E-Book Fiction",
+          "published_date": "2016-08-28",
+          "bestsellers_date": "2016-08-13",
+          "weeks_on_list": 13,
+          "ranks_last_week": null,
+          "asterisk": 0,
+          "dagger": 0
+        }
+      ],
+      "reviews": [
+        {
+          "book_review_link": "",
+          "first_chapter_link": "",
+          "sunday_review_link": "",
+          "article_chapter_link": ""
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Search parameter - author
+```
+The author of the best seller.
+
+When searching the author field, you can specify any combination of first, 
+middle and last names.
+
+When sort-by is set to author, the results will be sorted by author's first name.
+```
+
+```{r, warning=FALSE}
+best_seller_author_search <- function(author) {
+        url = paste(
+                "https://api.nytimes.com/svc/books/v3/lists/best-sellers/history.json?api-key=ca3dd8e9d2304f22aa90401d20180bd1&author=",
+                paste(unlist(str_split(author, "\\s")) , collapse = "+"),
+                sep = "")
+        myOpts <- curlOptions(connecttimeout = 200)
+        jsonFromUrl <- getURL(url, .opts = myOpts)
+        tmp <- tempfile()
+        file_conn <- file(tmp)
+        writeLines(jsonFromUrl, file_conn)
+        on.exit(close(file_conn))
+        books <- read_json(tmp)
+        
+        options(stringsAsFactors=FALSE)
+        df <- data.frame(title <- as.character(),
+                         description <- as.character(),
+                         contributor <- as.character(),
+                         author <- as.character(),
+                         contributor_note <- as.character(),
+                         price <- as.numeric(),
+                         age_group <- as.character(),
+                         publisher <- as.character(),
+                         isbn10 <- as.character(),
+                         isbn13 <- as.character(),
+                         rank <- as.character(),
+                         list_name <- as.character(),
+                         display_name <- as.character(),
+                         published_date <- as.character(),
+                         bestsellers_date <- as.character(),
+                         weeks_on_list <- as.integer(),
+                         asterisk <- as.integer(),
+                         dagger <- as.integer()
+        )
+        for(i in 0:(length(books[[4]]) - 1)) {
+                tryCatch({
+                        title <- json_path(books, paste("$.results[",i,"].title", sep = ""))
+                        description <- json_path(books, paste("$.results[",i,"].description", sep = ""))
+                        contributor <- json_path(books, paste("$.results[",i,"].contributor", sep = ""))
+                        author <- json_path(books, paste("$.results[",i,"].author", sep = ""))
+                        contributor_note <- json_path(books, paste("$.results[",i,"].contributor_note", sep = ""))
+                        price <- json_path(books, paste("$.results[",i,"].price", sep = ""))
+                        age_group <- json_path(books, paste("$.results[",i,"].age_group", sep = ""))
+                        publisher <- json_path(books, paste("$.results[",i,"].publisher", sep = ""))
+                        
+                        book_ranking_history <- books[[4]][[i+1]]$ranks_history
+                        if (length(book_ranking_history) != 0) {
+                                for (j in 1:(length(book_ranking_history))) {
+                                        primary_isbn10 <- book_ranking_history[[j]]$primary_isbn10
+                                        primary_isbn13 <- book_ranking_history[[j]]$primary_isbn13
+                                        rank <- book_ranking_history[[j]]$rank
+                                        list_name <- book_ranking_history[[j]]$list_name
+                                        display_name <- book_ranking_history[[j]]$display_name
+                                        published_date <-book_ranking_history[[j]]$published_date
+                                        bestsellers_date <- book_ranking_history[[j]]$bestsellers_date
+                                        weeks_on_list <- book_ranking_history[[j]]$weeks_on_list
+                                        asterisk <- book_ranking_history[[j]]$asterisk
+                                        dagger <- book_ranking_history[[j]]$dagger
+                                        
+                                        df <- rbind(df, data.frame(title=title,
+                                                                   description=description,
+                                                                   contributor=contributor,
+                                                                   author=author,
+                                                                   contributor_note=contributor_note,
+                                                                   price=price,
+                                                                   age_group=age_group,
+                                                                   publisher=publisher,
+                                                                   isbn10=primary_isbn10,
+                                                                   isbn13=primary_isbn13,
+                                                                   rank=rank,
+                                                                   list_name=list_name,
+                                                                   display_name=display_name,
+                                                                   published_date=published_date,
+                                                                   bestsellers_date=bestsellers_date,
+                                                                   weeks_on_list=weeks_on_list,
+                                                                   #ranks_last_week=ranks_last_week
+                                                                   asterisk=asterisk,
+                                                                   dagger=dagger
+                                        ))
+                                }
+                        }
+                },
+                error = function(e) print("data not found")
+                )
+        }
+        df
+}
+```
+```{r, warning=FALSE, message=FALSE}
+best_seller_author_search("Vaynerchuk")
+```
+
+```{r, warning=FALSE, message=FALSE}
+best_seller_author_search("Diana Gabaldon")
+```
