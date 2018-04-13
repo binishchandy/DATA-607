@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Project 04 - "
 author: "Binish Kurian Chandy"
 date: "4/13/2018"
 output: html_document
@@ -103,7 +103,7 @@ easyham.df <- transform(easyham.df,
 head(easyham.df[with(easyham.df, order(-occurrence)),])
 ```
 
-### Apply naive Bayes classifier on test dataset
+### Apply naive Bayes classifier on ham test dataset
 ```{r}
 classify.email <- function(path, training.df, prior = 0.5, c = 1e-6) {
         msg <- get.msg(path)
