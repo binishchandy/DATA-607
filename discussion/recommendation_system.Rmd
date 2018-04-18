@@ -1,0 +1,34 @@
+---
+title: 'Discussion 12: Recommender Systems'
+author: "Binish Kurian Chandy"
+date: "4/17/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Netflix
+
+One of the core potential benefits of recommendation systems is their ability to 
+continuously calibrate to the preferences of the user. This makes products that 
+become more and more “sticky” in their customer retention as time goes on:
+You’re much less likely to switch to a Netflix competitor when Netflix has such 
+a wonderful sense of which movies and shows you might want to watch next (i.e. 
+they “know you so well”). Because most of Netflix’s revenues come from a 
+fixed-rate recurring billing model subscription, the company’s biggest ROI “win” 
+with recommendation systems is retention.
+
+**Target users**: Existing and new users of Netflix  
+**Goals**: Users want to watch new movies and tv shows based on their ‘taste’ without 
+doing lots of searching in the Netflix website or on the internet.  
+**How to reach the goal**: Using personalized recommendation service.  
+
+**Improvement for recommendation engine**: Currently recommendation engine works for 
+the household. Even though the service allows to have user profile, the 
+recommendations user see are for the household. This I feel is counterproductive. 
+The recommendation engine should work for each profile and give movie suggestion 
+based on each profile owner’s taste.
+
+https://medium.com/netflix-techblog/netflix-recommendations-beyond-the-5-stars-part-1-55838468f429
