@@ -1,0 +1,28 @@
+---
+title: "Final Project Proposal - Analyze Storm Events Dataset"
+author: "Binish Kurian Chandy"
+date: "4/28/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Motivation
+```
+The occurrence of storms and other significant weather phenomena having 
+sufficient intensity to cause loss of life, injuries, significant property 
+damage, and/or disruption to commerce. Rare, unusual, weather phenomena that 
+generate media attention, such as snow flurries in South Florida or the San 
+Diego coastal area and other significant meteorological events, such as record 
+maximum or minimum temperatures or precipitation that occur in connection with
+another event.
+
+By analyzing the storms events dataset, it can give shed some light on the most 
+dangerous or likely event like coastal floods and waterspout caused by storm, 
+it's impact etc...
+```
+
+### Data source
+[National Storm Events Database](https://catalog.data.gov/dataset/ncdc-storm-events-database/resource/1e155695-5574-4d3b-9cf4-c08bc8982925)
