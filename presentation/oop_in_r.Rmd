@@ -1,0 +1,134 @@
+---
+title: "Object Oriented Programming in R"
+author: "Binish Kurian Chandy"
+date: "5/1/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+require(pryr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### What is Object Oriented Programming?
+Object-oriented programming is a programming paradigm based on the concept of "objects", 
+which may contain data, in the form of fields, often known as attributes; and 
+code, in the form of procedures, often known as methods.
+ 
+A **class** defines the behavior of **objects** by describing their attributes and their 
+relationship to other classes. The class is also used when selecting **methods**, 
+functions that behave differently depending on the class of their input. 
+Classes are usually organised in a hierarchy: if a method does not exist for a 
+child, then the parent’s method is used instead; the child **inherits** behavior 
+from the parent. 
+
+### R’s three OO systems
+* **S3** implements a style of OO programming called generic-function OO. This is 
+different from most programming languages, like Java, C++, and C#, which implement 
+message-passing OO. S3 is a very casual system. It has no formal definition of classes.
+
+* **S4** works similarly to S3, but is more formal. **S4 has formal class definitions**, 
+which describe the representation and inheritance for each class, and has special helper 
+functions for defining generics and methods. 
+
+* **Reference classes**, called RC for short, are quite different from S3 and S4.
+  + Introduced in version `2.12`
+  + RC methods belong to objects, not functions
+  + RC objects are mutable
+
+### Reference classes (RC)
+RC objects behave more like objects do in most other programming languages, 
+e.g., Python, Ruby, Java, and C#. RC classes are best used for describing stateful 
+objects, objects that change over time.
+
+### Defining classes and creating objects
+```{r}
+# setRefClass() generates new objects
+Account <- setRefClass("Account")
+Account$new()
+
+# how to create fields ?
+Account <- setRefClass("Account",
+  fields = list(balance = "numeric"))
+
+# access field using $
+a <- Account$new(balance = 100)
+a$balance
+
+# mutate field 
+a$balance <- 200
+a$balance
+
+# RC objects are mutable
+b <- a
+b$balance
+a$balance <- 0
+b$balance
+
+# For this reason, RC objects come with a copy() method that allow you to make a copy of the object
+c <- a$copy()
+c$balance
+a$balance <- 100
+c$balance
+
+# Add behaviour to objects through methods
+# contains is the name of the parent RC class to inherit behaviour from.
+# The deep assignment arrow, <<-, never creates a variable in the current environment,
+# but instead  modifies an existing variable found by walking up the parent environments.
+Account <- setRefClass("Account",
+  fields = list(balance = "numeric"),
+  methods = list(
+    withdraw = function(x) {
+      balance <<- balance - x
+    },
+    deposit = function(x) {
+      balance <<- balance + x
+    }
+  )
+)
+
+a <- Account$new(balance = 100)
+a$deposit(100)
+a$balance
+```
+
+### Inheritence
+```{r}
+NoOverdraft <- setRefClass("NoOverdraft",
+  contains = "Account",
+  methods = list(
+    withdraw = function(x) {
+      if (balance < x) stop("Not enough money")
+      balance <<- balance - x
+    }
+  )
+)
+accountJohn <- NoOverdraft$new(balance = 100)
+accountJohn$deposit(50)
+accountJohn$balance
+```
+```{r, eval=FALSE}
+accountJohn$withdraw(200)
+```
+All reference classes eventually inherit from **envRefClass**.
+
+### Recognizing objects and methods
+```{r}
+is(accountJohn, "refClass")
+pryr::otype(accountJohn)
+```
+
+### Method dispatch
+Method dispatch is very simple in RC because methods are associated with classes, 
+not functions. When you call `x$f()`, R will look for a method f in the class of x, 
+then in its parent, then its parent’s parent, and so on. From within a method, 
+you can call the parent method directly with `callSuper(...)`.
+
+
+
+
+
+
+
+
+
