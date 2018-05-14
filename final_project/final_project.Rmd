@@ -2,14 +2,16 @@
 title: "Final Project - Storm Events"
 author: "Binish Kurian Chandy"
 date: "5/12/2018"
-output: 
+output:
   html_document:
-    theme: flatly
     highlight: tango
-    toc: true
+    theme: flatly
+    toc: yes
     toc_float:
-      collapsed: false
-      smooth_scroll: true
+      collapsed: no
+      smooth_scroll: yes
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -36,7 +38,7 @@ locations.filtered <- locations %>%
         filter(!is.na(LATITUDE), !is.na(LONGITUDE)) %>%
         select(EVENT_ID, LATITUDE, LONGITUDE)
 locations = mongo(collection = "locations", db = "locations_db")
-#locations$insert(locations.filtered)
+locations$insert(locations.filtered)
 
 location.df <- locations$find('{}')
 knitr::opts_chunk$set(echo = TRUE)
