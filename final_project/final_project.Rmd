@@ -1,0 +1,501 @@
+---
+title: "Final Project - Storm Events"
+author: "Binish Kurian Chandy"
+date: "5/12/2018"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+require(tidyverse)
+require(ggplot2)
+require(ggmap)
+require(mongolite)
+require(kableExtra)
+require(plotly)
+require(DT)
+# read storm event details
+df <- as.tibble(read.csv("StormEvents_details.csv", header = TRUE))
+# clean up storm events data
+df <- df %>%
+        mutate(TOTAL_INJURIES = INJURIES_DIRECT + INJURIES_INDIRECT,
+               TOTAL_DEATH = DEATHS_DIRECT + DEATHS_INDIRECT) %>%
+        mutate(MONTH_NAME = as.factor(MONTH_NAME)) %>%
+        select(-BEGIN_LAT, -BEGIN_LON)
+
+# Location data is sourced by mango db
+# Insert location data to mongo db
+locations <- as.tibble(read.csv("StormEvents_locations.csv", header = TRUE))
+locations.filtered <- locations %>%
+        filter(!is.na(LATITUDE), !is.na(LONGITUDE)) %>%
+        select(EVENT_ID, LATITUDE, LONGITUDE)
+locations = mongo(collection = "locations", db = "locations_db")
+#locations$insert(locations.filtered)
+
+location.df <- locations$find('{}')
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Project Goals
+The occurrence of storms and other significant weather phenomena having 
+sufficient intensity to cause loss of life, injuries, significant property 
+damage, and/or disruption to commerce. Rare, unusual, weather phenomena that 
+generate media attention, such as snow flurries in South Florida or the San 
+Diego coastal area and other significant meteorological events, such as record 
+maximum or minimum temperatures or precipitation that occur in connection with
+another event.
+
+By analyzing the storms events, we can get some insights into impact of storm events.
+
+### NCDC Storm Events Database
+The data set used in this analysis is obtained from `NCDC Storm Events Database`.
+Storm Data is provided by the National Weather Service (NWS) and contain statistics on personal injuries and damage estimates. Storm Data covers the United States of America. The data began as early as 1950 through to the present, updated monthly with up to a 120 day delay possible. NCDC Storm Event database allows users to find various types of storms recorded by county, or use other selection criteria as desired. The data contain a chronological listing, by state, of hurricanes, tornadoes, thunderstorms, hail, floods, drought conditions, lightning, high winds, snow, temperature extremes and other weather phenomena.
+
+For my analysis, the data set contains only storm events from 2017.
+
+### What are the different storm event types?
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE}
+p <- df %>%
+        group_by(EVENT_TYPE) %>%
+        summarise(count = n()) %>%
+        arrange(desc(count)) %>%
+        ggplot(fill="red") +
+        geom_bar(mapping = aes(x = reorder(EVENT_TYPE, count), y = count), stat = "identity", color = "red") +
+        coord_flip() +
+        xlab("Event Type") +
+        ylab("Storm Events")
+ggplotly(p)
+```
+
+### Storm Events Per State
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE}
+p <- df %>%
+        group_by(YEAR, STATE) %>%
+        summarise(count = n()) %>%
+        arrange(desc(count)) %>%
+        ggplot(fill="red") +
+        geom_bar(mapping = aes(x = reorder(STATE, count), y = count), stat = "identity", color = "red") +
+        coord_flip() +
+        xlab("State") +
+        ylab("Storm Events")
+ggplotly(p)
+```
+
+```{r, echo=FALSE}
+datatable(df %>%
+        group_by(YEAR, STATE) %>%
+        summarise(EVENTS = n()) %>%
+        arrange(desc(EVENTS)), class = 'cell-border stripe',caption = 'Table 1: Storm Events By State',options = list(pageLength = 5, dom = 'tip'))
+```
+```
+Texas has the most number of storm events followed by Missouri and Kansas.  
+```
+
+### How Many Injuries Are Caused By Storm Events?
+```{r, echo=FALSE}
+datatable(df %>% 
+        mutate(TOTAL_INJURIES = INJURIES_DIRECT + INJURIES_INDIRECT,
+               TOTAL_DEATH = DEATHS_DIRECT + DEATHS_INDIRECT) %>%
+        group_by(YEAR, STATE) %>%
+        summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
+        filter(INJURIES > 0) %>%      
+        arrange(desc(INJURIES)), class = 'cell-border stripe',caption = 'Table 2: Injury By State',options = list(pageLength = 5, dom = 'tip'))
+```
+```
+Most number of injuries happened at Colorado followed by Texas and Georgia.
+```
+### How Many Deaths Are Caused By Storm Events?
+```{r, echo=FALSE}
+datatable(df %>% 
+        mutate(TOTAL_INJURIES = INJURIES_DIRECT + INJURIES_INDIRECT,
+               TOTAL_DEATH = DEATHS_DIRECT + DEATHS_INDIRECT) %>%
+        group_by(YEAR, STATE) %>%
+        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
+        filter(DEATHS > 0) %>% 
+        arrange(desc(DEATHS)), class = 'cell-border stripe',caption = 'Table 3: Death By State',options = list(pageLength = 5, dom = 'tip'))
+```
+```
+Storm events took 184 lives in Texas followed by 121 in Nevada and 101 in Florida.
+```
+
+We will analyze the storm events in the top 3 states having most number of deaths due to storm events
+
+### Texas - Storm Event Analysis
+Total storm events in the state of Texas for 2017 are
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+df.texas <- df %>%
+        filter(STATE == 'TEXAS')
+nrow(df.texas)
+```
+
+#### Storm Events By Month
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+df.texas %>%
+        ggplot(fill="red") +
+        geom_bar(mapping = aes(x = EVENT_TYPE), color = "red") +
+        coord_flip() +
+        facet_wrap (~MONTH_NAME) +
+        xlab("Events") +
+        ylab("Count")
+```
+```
+Hail is the most common form of storm event in Texas resulting in almost $1.4 billion in estimated losses.
+Other major storm events are thunderstorm wind and flash flood.
+```
+
+#### Distribution of Storm Events By Month
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        group_by(MONTH_NAME) %>%
+#        summarise(EVENTS = n()) %>%
+#        arrange(desc(EVENTS)), class = 'cell-border stripe',caption = 'Table 5: Storm Events By Month',options = list(pageLength = 12, dom = 'tip'))
+
+ggplotly(df.texas %>%
+        group_by(MONTH_NAME) %>%
+        summarise(EVENTS = n()) %>%
+ggplot() +
+  geom_bar(mapping = aes(x = reorder(MONTH_NAME, EVENTS), y = EVENTS), stat = "identity") +
+        xlab("Month") + 
+        ylab("Events")
+)
+```
+
+#### Death By Storm Events
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        group_by(MONTH_NAME) %>%
+#        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
+#        arrange(desc(DEATHS)), class = 'cell-border stripe',caption = 'Table 6: Deaths Due To Storm Events',options = #list(pageLength = 12, dom = 'tip'))
+
+ggplotly(
+    df.texas %>%
+        group_by(MONTH_NAME) %>%
+        summarise(DEATHS = sum(TOTAL_DEATH)) %>%    
+            ggplot() +
+  geom_bar(mapping = aes(x = MONTH_NAME, y = DEATHS), stat = "identity") +
+        xlab("Month") + 
+          ylab("Death")
+)
+```
+```
+Most number of deaths are happening in the month of May (136 deaths) followed by July (17 deaths).
+
+```
+#### Death Caused By Storm Events For August
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        filter(MONTH_NAME == 'August') %>%
+#        group_by(EVENT_TYPE) %>%
+#        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
+#        arrange(desc(DEATHS)), class = 'cell-border stripe',caption = 'Table 7: Deaths in August',options = list(pageLength #= 6, dom = 'tip'))
+
+ggplotly(
+   df.texas %>%
+        filter(MONTH_NAME == 'August') %>%
+        group_by(EVENT_TYPE) %>%
+        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
+      ggplot() +
+  geom_bar(mapping = aes(x = reorder(EVENT_TYPE, DEATHS), y = DEATHS), stat = "identity") +
+        xlab("Deaths") + 
+          ylab("Events") +
+           coord_flip()
+)
+```
+```
+The deaths are mostly caused by flash flood and tropical storm followed by hurricane and thunderstorm wind.
+```
+
+#### Injury Caused By Storm Events
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        group_by(MONTH_NAME) %>%
+#        summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
+#        arrange(desc(INJURIES)), class = 'cell-border stripe',caption = 'Table 8: Injury By Storm Events',options = #list(pageLength = 12, dom = 'tip'))
+
+ggplotly(
+       df.texas %>%
+        group_by(MONTH_NAME) %>%
+        summarise(INJURIES = sum(TOTAL_INJURIES)) %>% 
+      ggplot() +
+  geom_bar(mapping = aes(x = reorder(MONTH_NAME, INJURIES), y = INJURIES), stat = "identity") +
+        xlab("Injury") + 
+          ylab("Events") +
+           coord_flip()
+)
+```
+```
+Most number of injuried are happening in the month of April and August.
+```
+
+#### Injury Caused By Storm Events For April & August
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        filter(MONTH_NAME %in% c('August', 'April')) %>%
+#        group_by(EVENT_TYPE) %>%
+#        summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
+#        arrange(desc(INJURIES)), class = 'cell-border stripe',caption = 'Table 9: Injuries in April & August',options = list(pageLength = 4, dom = 'tip'))
+
+ggplotly(
+     df.texas %>%
+        filter(MONTH_NAME %in% c('August', 'April')) %>%
+        group_by(EVENT_TYPE) %>%
+        summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
+        ggplot() +
+  geom_bar(mapping = aes(x = reorder(EVENT_TYPE, INJURIES), y = INJURIES), stat = "identity") +
+        xlab("Injury") + 
+          ylab("Events") +
+           coord_flip()     
+)
+```  
+```
+Majority of the injuries are caused by hurricane and tornado.
+```
+  
+#### Storm Events On Google Map
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+df.texas <- df.texas %>%
+        inner_join(location.df, by = "EVENT_ID") 
+df.texas.lat.log <- df.texas %>%
+        filter(!is.na(LATITUDE), !is.na(LONGITUDE))
+# getting the map
+mapgilbert <- get_map(location = c(lon = mean(df.texas.lat.log$LONGITUDE), lat = mean(df.texas.lat.log$LATITUDE)), zoom = 6,
+                      maptype = "hybrid", scale = 1)
+
+# plotting the map with some points on it
+ggmap(mapgilbert) +
+        geom_point(data = df.texas.lat.log, aes(x = LONGITUDE, y = LATITUDE, fill = "red", alpha = 0.8), size = 2, shape = 21) +
+        guides(fill=FALSE, alpha=FALSE, size=FALSE)
+```
+
+### Nevada - Storm Event Analysis
+Total storm events in the state of Nevada for 2017 are
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+df.missouri <- df %>%
+        filter(STATE == 'NEVADA')
+nrow(df.missouri)
+```
+
+#### Storm Events By Month
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE}
+df.missouri %>%
+        ggplot(fill="red") +
+        geom_bar(mapping = aes(x = EVENT_TYPE), color = "red") +
+        coord_flip() +
+        facet_wrap (~MONTH_NAME) +
+        xlab("Events") +
+        ylab("Count")
+```
+
+
+#### Distribution of Events By Month
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        group_by(MONTH_NAME) %>%
+#        summarise(EVENTS = n()) %>%
+#        arrange(desc(EVENTS)), class = 'cell-border stripe',caption = 'Table 5: Storm Events By Month',options = list(pageLength = 12, dom = 'tip'))
+
+ggplotly(df.missouri %>%
+        group_by(MONTH_NAME) %>%
+        summarise(EVENTS = n()) %>%
+ggplot() +
+  geom_bar(mapping = aes(x = reorder(MONTH_NAME, EVENTS), y = EVENTS), stat = "identity") +
+        xlab("Month") + 
+        ylab("Events")
+)
+```
+```
+Most number of storm events happen in the month of January and July followed by November.
+```
+
+#### Death Caused By Storm Events
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+
+#datatable(df.texas %>%
+#        group_by(MONTH_NAME) %>%
+#        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
+#        arrange(desc(DEATHS)), class = 'cell-border stripe',caption = 'Table 6: Deaths Due To Storm Events',options = #list(pageLength = 12, dom = 'tip'))
+
+ggplotly(
+    df.missouri %>%
+        group_by(MONTH_NAME) %>%
+        summarise(DEATHS = sum(TOTAL_DEATH)) %>%    
+            ggplot() +
+  geom_bar(mapping = aes(x = MONTH_NAME, y = DEATHS), stat = "identity") +
+        xlab("Month") + 
+          ylab("Death")
+)
+```
+```
+Most number of deaths happen in the month of June and July closely followed by August.
+```
+
+#### Injury Caused By Storm Events
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        group_by(MONTH_NAME) %>%
+#        summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
+#        arrange(desc(INJURIES)), class = 'cell-border stripe',caption = 'Table 8: Injury By Storm Events',options = #list(pageLength = 12, dom = 'tip'))
+
+ggplotly(
+       df.missouri %>%
+        group_by(MONTH_NAME) %>%
+        summarise(INJURIES = sum(TOTAL_INJURIES)) %>% 
+      ggplot() +
+  geom_bar(mapping = aes(x = reorder(MONTH_NAME, INJURIES), y = INJURIES), stat = "identity") +
+        xlab("Injury") + 
+          ylab("Events") +
+           coord_flip()
+)
+```
+```
+Most number of injuries are happening in the month of May and November.
+```
+
+#### Storm Events On Google Map
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+df.missouri <- df.missouri %>%
+        inner_join(location.df, by = "EVENT_ID") 
+df.missouri.lat.log <- df.missouri %>%
+        filter(!is.na(LATITUDE), !is.na(LONGITUDE))
+# getting the map
+mapgilbert <- get_map(location = c(lon = mean(df.missouri.lat.log$LONGITUDE), lat = mean(df.missouri.lat.log$LATITUDE)), zoom = 6,
+                      maptype = "hybrid", scale = 1)
+
+# plotting the map with some points on it
+ggmap(mapgilbert) +
+        geom_point(data = df.missouri.lat.log, aes(x = LONGITUDE, y = LATITUDE, fill = "red", alpha = 0.8), size = 3, shape = 21) +
+        guides(fill=FALSE, alpha=FALSE, size=FALSE)
+```
+
+### Florida - Storm Event Analysis
+Total storm events in the state of Kansas for 2017 are
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+df.kansas <- df %>%
+        filter(STATE == 'FLORIDA')
+nrow(df.kansas)
+```
+
+#### Storm Events By Month
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+df.kansas %>%
+        ggplot(fill="red") +
+        geom_bar(mapping = aes(x = EVENT_TYPE), color = "red") +
+        coord_flip() +
+        facet_wrap (~MONTH_NAME) +
+        xlab("Events") +
+        ylab("Count")
+```
+
+#### Distribution of Events By Month
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        group_by(MONTH_NAME) %>%
+#        summarise(EVENTS = n()) %>%
+#        arrange(desc(EVENTS)), class = 'cell-border stripe',caption = 'Table 5: Storm Events By Month',options = list(pageLength = 12, dom = 'tip'))
+
+ggplotly(df.kansas %>%
+        group_by(MONTH_NAME) %>%
+        summarise(EVENTS = n()) %>%
+ggplot() +
+  geom_bar(mapping = aes(x = reorder(MONTH_NAME, EVENTS), y = EVENTS), stat = "identity") +
+        xlab("Month") + 
+        ylab("Events")
+)
+```
+```
+September has the most number of storm events followed by July and January.
+```
+
+#### Death Caused By Storm Events
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        group_by(MONTH_NAME) %>%
+#        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
+#        arrange(desc(DEATHS)), class = 'cell-border stripe',caption = 'Table 6: Deaths Due To Storm Events',options = #list(pageLength = 12, dom = 'tip'))
+
+ggplotly(
+    df.kansas %>%
+        group_by(MONTH_NAME) %>%
+        summarise(DEATHS = sum(TOTAL_DEATH)) %>%    
+            ggplot() +
+  geom_bar(mapping = aes(x = MONTH_NAME, y = DEATHS), stat = "identity") +
+        xlab("Month") + 
+          ylab("Death")
+)
+```
+```
+September has the most number of deaths due to storm events.
+```
+
+#### Injury Caused By Storm Events
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+#datatable(df.texas %>%
+#        group_by(MONTH_NAME) %>%
+#        summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
+#        arrange(desc(INJURIES)), class = 'cell-border stripe',caption = 'Table 8: Injury By Storm Events',options = #list(pageLength = 12, dom = 'tip'))
+
+ggplotly(
+       df.kansas %>%
+        group_by(MONTH_NAME) %>%
+        summarise(INJURIES = sum(TOTAL_INJURIES)) %>% 
+      ggplot() +
+  geom_bar(mapping = aes(x = reorder(MONTH_NAME, INJURIES), y = INJURIES), stat = "identity") +
+        xlab("Injury") + 
+          ylab("Events") +
+           coord_flip()
+)
+```
+```
+Most number of injuries are caused by storm events in the months of September and July.
+```
+
+#### Storm Events On Google Map
+```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+df.kansas <- df.kansas %>%
+        inner_join(location.df, by = "EVENT_ID") 
+df.kansas.lat.log <- df.kansas %>%
+        filter(!is.na(LATITUDE), !is.na(LONGITUDE))
+# getting the map
+mapgilbert <- get_map(location = c(lon = mean(df.kansas.lat.log$LONGITUDE), lat = mean(df.kansas.lat.log$LATITUDE)), zoom = 6,
+                      maptype = "hybrid", scale = 1)
+
+# plotting the map with some points on it
+ggmap(mapgilbert) +
+        geom_point(data = df.kansas.lat.log, aes(x = LONGITUDE, y = LATITUDE, fill = "red", alpha = 0.8), size = 2, shape = 21) +
+        guides(fill=FALSE, alpha=FALSE, size=FALSE)
+```  
+
+### Magnitude Of Types of Wind
+```{r,fig.width=10, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+ggplotly(
+df %>%
+        filter(!is.na(MAGNITUDE)) %>%
+        filter(str_detect(EVENT_TYPE, 'Wind')) %>%
+ggplot() + 
+        stat_summary(
+                mapping = aes(x = EVENT_TYPE, y = MAGNITUDE),
+                fun.ymin = min,
+                fun.ymax = max,
+                fun.y = median
+        ) +
+        xlab("Wind Type") +
+        ylab("Speed (mph)")
+)
+```
+```
+High winds have the highest magnitude in all types of winds.
+```
+
+### Conclusion
+* Thunderstorm wind is the most widely happened storm event in 2017 followed by hail and flash flood.
+* Texas has the most number of storm events (3620) followed by Missouri(2289) and Kansas(2153).
+* Most number of injuries due to storm events happened in Colorado followed by Texas and Georgia.
+* Most number of deaths due to storm events happened n Texas followed by Nevada and Florida.
+* Flash flood caused most number of deaths in Texas followed by tropical storm and  hurricane.
+* Most number of deaths caused by storm events happened in the month of July in Nevada.
+* Most number of deaths caused by storm events happened in the month of September in Florida.
