@@ -38,7 +38,7 @@ locations.filtered <- locations %>%
         filter(!is.na(LATITUDE), !is.na(LONGITUDE)) %>%
         select(EVENT_ID, LATITUDE, LONGITUDE)
 locations = mongo(collection = "locations", db = "locations_db")
-locations$insert(locations.filtered)
+#locations$insert(locations.filtered)
 
 location.df <- locations$find('{}')
 knitr::opts_chunk$set(echo = TRUE)
@@ -136,7 +136,7 @@ nrow(df.texas)
 ```
 
 #### Storm Events By Month
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 df.texas %>%
         ggplot(fill="red") +
         geom_bar(mapping = aes(x = EVENT_TYPE), color = "red") +
@@ -151,7 +151,7 @@ Other major storm events are thunderstorm wind and flash flood.
 ```
 
 #### Distribution of Storm Events By Month
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        group_by(MONTH_NAME) %>%
 #        summarise(EVENTS = n()) %>%
@@ -168,7 +168,7 @@ ggplot() +
 ```
 
 #### Death By Storm Events
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        group_by(MONTH_NAME) %>%
 #        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
@@ -189,7 +189,7 @@ Most number of deaths are happening in the month of May (136 deaths) followed by
 
 ```
 #### Death Caused By Storm Events For August
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        filter(MONTH_NAME == 'August') %>%
 #        group_by(EVENT_TYPE) %>%
@@ -213,7 +213,7 @@ The deaths are mostly caused by flash flood and tropical storm followed by hurri
 ```
 
 #### Injury Caused By Storm Events
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        group_by(MONTH_NAME) %>%
 #        summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
@@ -235,7 +235,7 @@ Most number of injuried are happening in the month of April and August.
 ```
 
 #### Injury Caused By Storm Events For April & August
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        filter(MONTH_NAME %in% c('August', 'April')) %>%
 #        group_by(EVENT_TYPE) %>%
@@ -277,14 +277,14 @@ ggmap(mapgilbert) +
 ### Nevada - Storm Event Analysis
 Total storm events in the state of Nevada for 2017 are
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-df.missouri <- df %>%
+df.nevada <- df %>%
         filter(STATE == 'NEVADA')
-nrow(df.missouri)
+nrow(df.nevada)
 ```
 
 #### Storm Events By Month
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE}
-df.missouri %>%
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE}
+df.nevada %>%
         ggplot(fill="red") +
         geom_bar(mapping = aes(x = EVENT_TYPE), color = "red") +
         coord_flip() +
@@ -295,13 +295,13 @@ df.missouri %>%
 
 
 #### Distribution of Events By Month
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        group_by(MONTH_NAME) %>%
 #        summarise(EVENTS = n()) %>%
 #        arrange(desc(EVENTS)), class = 'cell-border stripe',caption = 'Table 5: Storm Events By Month',options = list(pageLength = 12, dom = 'tip'))
 
-ggplotly(df.missouri %>%
+ggplotly(df.nevada %>%
         group_by(MONTH_NAME) %>%
         summarise(EVENTS = n()) %>%
 ggplot() +
@@ -315,7 +315,7 @@ Most number of storm events happen in the month of January and July followed by 
 ```
 
 #### Death Caused By Storm Events
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 
 #datatable(df.texas %>%
 #        group_by(MONTH_NAME) %>%
@@ -323,7 +323,7 @@ Most number of storm events happen in the month of January and July followed by 
 #        arrange(desc(DEATHS)), class = 'cell-border stripe',caption = 'Table 6: Deaths Due To Storm Events',options = #list(pageLength = 12, dom = 'tip'))
 
 ggplotly(
-    df.missouri %>%
+    df.nevada %>%
         group_by(MONTH_NAME) %>%
         summarise(DEATHS = sum(TOTAL_DEATH)) %>%    
             ggplot() +
@@ -333,18 +333,32 @@ ggplotly(
 )
 ```
 ```
-Most number of deaths happen in the month of June and July closely followed by August.
+Most number of deaths happen in the month of July followed by June and August.
+```
+#### Cause Of Death in July
+```{r, fig.width=10, fig.height=8, echo=FALSE, warning=FALSE, message=FALSE}
+ggplotly(
+   df.nevada %>%
+        filter(MONTH_NAME == 'July') %>%
+        group_by(EVENT_TYPE) %>%
+        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
+      ggplot() +
+  geom_bar(mapping = aes(x = reorder(EVENT_TYPE, DEATHS), y = DEATHS), stat = "identity") +
+        xlab("Deaths") + 
+          ylab("Events") +
+           coord_flip()
+)
 ```
 
 #### Injury Caused By Storm Events
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        group_by(MONTH_NAME) %>%
 #        summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
 #        arrange(desc(INJURIES)), class = 'cell-border stripe',caption = 'Table 8: Injury By Storm Events',options = #list(pageLength = 12, dom = 'tip'))
 
 ggplotly(
-       df.missouri %>%
+       df.nevada %>%
         group_by(MONTH_NAME) %>%
         summarise(INJURIES = sum(TOTAL_INJURIES)) %>% 
       ggplot() +
@@ -354,37 +368,53 @@ ggplotly(
            coord_flip()
 )
 ```
+
+#### Strom Events That Caused Injuries in May and November
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+ggplotly(
+            df.nevada %>%
+                filter(MONTH_NAME %in% c('May', 'November')) %>%
+                group_by(EVENT_TYPE) %>%
+                summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
+                ggplot() +
+          geom_bar(mapping = aes(x = reorder(EVENT_TYPE, INJURIES), y = INJURIES), stat = "identity") +
+                xlab("Injury") + 
+                  ylab("Events") +
+                   coord_flip()     
+        )
+
+```
 ```
 Most number of injuries are happening in the month of May and November.
 ```
 
 #### Storm Events On Google Map
 ```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
-df.missouri <- df.missouri %>%
+df.nevada <- df.nevada %>%
         inner_join(location.df, by = "EVENT_ID") 
-df.missouri.lat.log <- df.missouri %>%
+df.nevada.lat.log <- df.nevada %>%
         filter(!is.na(LATITUDE), !is.na(LONGITUDE))
 # getting the map
-mapgilbert <- get_map(location = c(lon = mean(df.missouri.lat.log$LONGITUDE), lat = mean(df.missouri.lat.log$LATITUDE)), zoom = 6,
+mapgilbert <- get_map(location = c(lon = mean(df.nevada.lat.log$LONGITUDE), lat = mean(df.nevada.lat.log$LATITUDE)), zoom = 6,
                       maptype = "hybrid", scale = 1)
 
 # plotting the map with some points on it
 ggmap(mapgilbert) +
-        geom_point(data = df.missouri.lat.log, aes(x = LONGITUDE, y = LATITUDE, fill = "red", alpha = 0.8), size = 3, shape = 21) +
+        geom_point(data = df.nevada.lat.log, aes(x = LONGITUDE, y = LATITUDE, fill = "red", alpha = 0.8), size = 3, shape = 21) +
         guides(fill=FALSE, alpha=FALSE, size=FALSE)
 ```
 
 ### Florida - Storm Event Analysis
 Total storm events in the state of Kansas for 2017 are
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-df.kansas <- df %>%
+df.florida <- df %>%
         filter(STATE == 'FLORIDA')
-nrow(df.kansas)
+nrow(df.florida)
 ```
 
 #### Storm Events By Month
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
-df.kansas %>%
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+df.florida %>%
         ggplot(fill="red") +
         geom_bar(mapping = aes(x = EVENT_TYPE), color = "red") +
         coord_flip() +
@@ -394,13 +424,13 @@ df.kansas %>%
 ```
 
 #### Distribution of Events By Month
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        group_by(MONTH_NAME) %>%
 #        summarise(EVENTS = n()) %>%
 #        arrange(desc(EVENTS)), class = 'cell-border stripe',caption = 'Table 5: Storm Events By Month',options = list(pageLength = 12, dom = 'tip'))
 
-ggplotly(df.kansas %>%
+ggplotly(df.florida %>%
         group_by(MONTH_NAME) %>%
         summarise(EVENTS = n()) %>%
 ggplot() +
@@ -414,14 +444,14 @@ September has the most number of storm events followed by July and January.
 ```
 
 #### Death Caused By Storm Events
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        group_by(MONTH_NAME) %>%
 #        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
 #        arrange(desc(DEATHS)), class = 'cell-border stripe',caption = 'Table 6: Deaths Due To Storm Events',options = #list(pageLength = 12, dom = 'tip'))
 
 ggplotly(
-    df.kansas %>%
+    df.florida %>%
         group_by(MONTH_NAME) %>%
         summarise(DEATHS = sum(TOTAL_DEATH)) %>%    
             ggplot() +
@@ -434,15 +464,29 @@ ggplotly(
 September has the most number of deaths due to storm events.
 ```
 
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+ggplotly(
+   df.florida %>%
+        filter(MONTH_NAME == 'September') %>%
+        group_by(EVENT_TYPE) %>%
+        summarise(DEATHS = sum(TOTAL_DEATH)) %>%
+      ggplot() +
+  geom_bar(mapping = aes(x = reorder(EVENT_TYPE, DEATHS), y = DEATHS), stat = "identity") +
+        xlab("Deaths") + 
+          ylab("Events") +
+           coord_flip()
+)
+```
+
 #### Injury Caused By Storm Events
-```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 #datatable(df.texas %>%
 #        group_by(MONTH_NAME) %>%
 #        summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
 #        arrange(desc(INJURIES)), class = 'cell-border stripe',caption = 'Table 8: Injury By Storm Events',options = #list(pageLength = 12, dom = 'tip'))
 
 ggplotly(
-       df.kansas %>%
+       df.florida %>%
         group_by(MONTH_NAME) %>%
         summarise(INJURIES = sum(TOTAL_INJURIES)) %>% 
       ggplot() +
@@ -455,25 +499,38 @@ ggplotly(
 ```
 Most number of injuries are caused by storm events in the months of September and July.
 ```
+```{r, fig.width=10, fig.height=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+ggplotly(
+            df.florida %>%
+                filter(MONTH_NAME %in% c('September')) %>%
+                group_by(EVENT_TYPE) %>%
+                summarise(INJURIES = sum(TOTAL_INJURIES)) %>%
+                ggplot() +
+          geom_bar(mapping = aes(x = reorder(EVENT_TYPE, INJURIES), y = INJURIES), stat = "identity") +
+                xlab("Injury") + 
+                 ylab("Events") +
+                   coord_flip()     
+        )
+```  
 
 #### Storm Events On Google Map
 ```{r, fig.width=10, fig.height=11, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
-df.kansas <- df.kansas %>%
+df.florida <- df.florida %>%
         inner_join(location.df, by = "EVENT_ID") 
-df.kansas.lat.log <- df.kansas %>%
+df.florida.lat.log <- df.florida %>%
         filter(!is.na(LATITUDE), !is.na(LONGITUDE))
 # getting the map
-mapgilbert <- get_map(location = c(lon = mean(df.kansas.lat.log$LONGITUDE), lat = mean(df.kansas.lat.log$LATITUDE)), zoom = 6,
+mapgilbert <- get_map(location = c(lon = mean(df.florida.lat.log$LONGITUDE), lat = mean(df.florida.lat.log$LATITUDE)), zoom = 6,
                       maptype = "hybrid", scale = 1)
 
 # plotting the map with some points on it
 ggmap(mapgilbert) +
-        geom_point(data = df.kansas.lat.log, aes(x = LONGITUDE, y = LATITUDE, fill = "red", alpha = 0.8), size = 2, shape = 21) +
+        geom_point(data = df.florida.lat.log, aes(x = LONGITUDE, y = LATITUDE, fill = "red", alpha = 0.8), size = 2, shape = 21) +
         guides(fill=FALSE, alpha=FALSE, size=FALSE)
 ```  
 
 ### Magnitude Of Types of Wind
-```{r,fig.width=10, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
+```{r,fig.width=8, fig.align = "center", echo=FALSE, warning=FALSE, message=FALSE}
 ggplotly(
 df %>%
         filter(!is.na(MAGNITUDE)) %>%
@@ -486,7 +543,8 @@ ggplot() +
                 fun.y = median
         ) +
         xlab("Wind Type") +
-        ylab("Speed (mph)")
+        ylab("Speed (mph)") +
+        coord_flip()  
 )
 ```
 ```
